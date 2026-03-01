@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="APM Prep">
+<title>APM Show Prep 🎸</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f8fafc; color: #1e293b; min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  #root { max-width: 600px; margin: 0 auto; padding: 16px 16px 100px; }
+
+  /* ── Shared ── */
+  .card { background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 8px; cursor: pointer; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .card-ready { border-color: #bbf7d0; }
+  .section { background: #fff; border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid #e2e8f0; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 600; display: inline-block; }
+  .btn { padding: 10px 20px; border-radius: 10px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .btn-p { background: #2563eb; color: #fff; }
+  .btn-s { background: #e2e8f0; color: #475569; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+  .btn-full { width: 100%; padding: 14px 20px; font-size: 16px; border-radius: 12px; }
+  .input { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 12px; color: #1e293b; font-size: 14px; width: 100%; }
+  .input:focus { outline: none; border-color: #2563eb; }
+  .chip { padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; font-weight: 500; border: 1px solid #cbd5e1; background: #f8fafc; color: #64748b; }
+  .chip-on { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .back-btn { background: none; border: none; color: #2563eb; font-size: 15px; cursor: pointer; padding: 4px 0; font-weight: 500; }
+  .label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; display: block; margin-bottom: 4px; }
+  .link-btn { background: none; border: none; color: #2563eb; font-size: 14px; cursor: pointer; font-weight: 500; padding: 0; text-decoration: none; }
+  .edit-btn { background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 12px; }
+  .delete-btn { background: none; border: none; color: #cbd5e1; cursor: pointer; font-size: 14px; }
+  .sync-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; }
+  .sync-ok { background: #22c55e; }
+  .sync-err { background: #ef4444; }
+  .sync-pending { background: #f59e0b; }
+
+  /* ── Responsive ── */
+  @media (max-width: 400px) { #root { padding: 12px 12px 90px; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const SHOW_DATE = new Date("2026-04-24T19:00:00");
+const SYNC_TOKEN = "guitar2026apm";
+
+const SONGS = [
+  { id: 1, order: 1, name: "Hard To Handle", artist: "Black Crowes", key: "B", bpm: 105, capo: null, shapes: ["B", "A", "E"], difficulty: 3, notes: "Syncopated funk rhythm.", playing: false, tutorial: null, playAlong: null },
+  { id: 2, order: 2, name: "December, 1963", artist: "Four Seasons", key: "C#", bpm: 105, capo: 1, shapes: ["C", "Am", "F", "G", "Dm", "Em"], difficulty: 2, notes: "Most chord variety.", playing: false, tutorial: null, playAlong: null },
+  { id: 3, order: 3, name: "Heaven Is A Place On Earth", artist: "Belinda Carlisle", key: "C#m", bpm: 123, capo: 4, shapes: ["Am", "F", "C", "G"], difficulty: 2, notes: "F barre or partial.", playing: true, tutorial: null, playAlong: null },
+  { id: 4, order: 4, name: "Style", artist: "Taylor Swift", key: "D", bpm: 95, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
+  { id: 5, order: 5, name: "Jessie's Girl", artist: "Rick Springfield", key: "D", bpm: 133, capo: 2, shapes: ["C", "G", "Am", "Fmaj7"], difficulty: 2, notes: "All open + Fmaj7 sub. Verse down, need chorus. Speed is the stretch.", playing: true, tutorial: "https://www.youtube.com/watch?v=VoKJqEHCdTM", playAlong: null },
+  { id: 6, order: 6, name: "Only Wanna Be With You", artist: "Hootie & the Blowfish", key: "F#", bpm: 104, capo: 2, shapes: ["E", "A", "B7"], difficulty: 1, notes: "Open shapes. Relaxed feel.", playing: true, tutorial: null, playAlong: null },
+  { id: 7, order: 7, name: "Ironic", artist: "Alanis Morissette", key: "B", bpm: 85, capo: 2, shapes: ["A", "E", "F#m", "D"], difficulty: 1, notes: "Slow, manageable.", playing: false, tutorial: null, playAlong: null },
+  { id: 8, order: 8, name: "Hit Me With Your Best Shot", artist: "Pat Benatar", key: "E", bpm: 129, capo: 2, shapes: ["D", "G", "Bm", "A"], difficulty: 2, notes: "One Bm barre. Verse down, need chorus.", playing: true, tutorial: null, playAlong: null },
+  { id: 9, order: 9, name: "Even Flow", artist: "Pearl Jam", key: "D", bpm: 116, capo: null, shapes: ["D", "A"], difficulty: null, notes: "No real secondary rhythm part. Pass.", playing: false, tutorial: null, playAlong: null },
+  { id: 10, order: 10, name: "Twist And Shout", artist: "Beatles", key: "D", bpm: 131, capo: null, shapes: ["D", "G", "A"], difficulty: 1, notes: "Three open chords.", playing: true, tutorial: null, playAlong: null },
+  { id: 11, order: 11, name: "Pink Pony Club", artist: "Chappell Roan", key: "F#", bpm: 107, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
+  { id: 12, order: 12, name: "Man I Need", artist: "", key: "Db", bpm: 120, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
+  { id: 13, order: 13, name: "Walk of Life", artist: "Dire Straits", key: "E", bpm: 172, capo: null, shapes: ["E", "A", "B"], difficulty: 2, notes: "Three chords. 172 BPM speed challenge.", playing: false, tutorial: null, playAlong: null },
+  { id: 14, order: 14, name: "I'm A Believer", artist: "Monkees", key: "F#", bpm: 164, capo: 4, shapes: ["D", "G", "C", "A"], difficulty: 1, notes: "All open with capo 4. Keep strumming tight.", playing: true, tutorial: null, playAlong: null },
+  { id: 15, order: 15, name: "99 Luftballons", artist: "Nena", key: "E", bpm: 97, capo: null, shapes: ["E", "F#m", "G#m", "A", "B"], difficulty: 2, notes: "New wave rhythm is the curve.", playing: false, tutorial: null, playAlong: null },
+  { id: 16, order: 16, name: "Purple Rain", artist: "Prince", key: "F", bpm: 118, capo: 1, shapes: ["Aadd9", "F#m7add11", "Dadd9", "Eadd9"], difficulty: 2, notes: "Same four chords throughout. Easy rhythm.", playing: true, tutorial: "https://www.youtube.com/watch?v=purple-rain-easy", playAlong: null },
+  { id: 17, order: 17, name: "Hotel California", artist: "Eagles", key: "Bm", bpm: 148, capo: null, shapes: ["Bm", "F#", "A", "E", "G", "D", "Em"], difficulty: 2, notes: "Most barre-heavy. Bm + F# barres. Intro TBD.", playing: true, tutorial: null, playAlong: null },
+  { id: 18, order: 18, name: "No Surrender", artist: "Bruce Springsteen", key: "F", bpm: 156, capo: null, shapes: ["F5", "Bb5", "C5"], difficulty: 2, notes: "All power chords. Alternate picking, palm muted.", playing: true, tutorial: "https://www.youtube.com/watch?v=no-surrender-tutorial", playAlong: null },
+  { id: 19, order: 19, name: "Sweet Home Chicago", artist: "Blues Brothers", key: "E", bpm: 130, capo: null, shapes: ["E7", "A7", "B7"], difficulty: 1, notes: "Already in your set. Intro TBD.", playing: true, tutorial: null, playAlong: "https://www.youtube.com/watch?v=sweet-home-chicago" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "not_started", label: "Not Started", color: "#94a3b8", bg: "#f1f5f9", emoji: "○" },
+  { value: "learning", label: "Learning", color: "#d97706", bg: "#fef3c7", emoji: "🟡" },
+  { value: "verse_down", label: "Verse Down", color: "#2563eb", bg: "#dbeafe", emoji: "🔵" },
+  { value: "full_song", label: "Full Song", color: "#7c3aed", bg: "#ede9fe", emoji: "🟣" },
+  { value: "performance_ready", label: "Performance Ready", color: "#16a34a", bg: "#dcfce7", emoji: "🟢" },
+];
+
+const SECTION_OPTIONS = ["Intro", "Verse", "Chorus", "Bridge", "Outro", "Solo Section", "Full Run-Through"];
+
+function getDaysUntilShow() {
+  return Math.max(0, Math.ceil((SHOW_DATE - new Date()) / (1000 * 60 * 60 * 24)));
+}
+function formatDateFull(ds) {
+  return new Date(ds).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+}
+
+// ══════════════════════════════════════════
+// CLOUD SYNC
+// ══════════════════════════════════════════
+function useCloudSync() {
+  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("apm-api-url") || "");
+  const [syncStatus, setSyncStatus] = useState("loading");
+  const [lastSync, setLastSync] = useState(null);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    if (apiUrl) {
+      setSyncStatus("connected");
+    } else {
+      setSyncStatus("setup");
+    }
+  }, []);
+
+  function saveApiUrl(url) {
+    const trimmed = url.trim().replace(/\/+$/, "");
+    localStorage.setItem("apm-api-url", trimmed);
+    setApiUrl(trimmed);
+    setSyncStatus("connected");
+  }
+
+  async function testConnection(url) {
+    try {
+      const resp = await fetch(`${url}?token=${SYNC_TOKEN}&key=apm-ping`);
+      const data = await resp.json();
+      return !data.error;
+    } catch { return false; }
+  }
+
+  async function cloudGet(key) {
+    if (!apiUrl) return null;
+    try {
+      const resp = await fetch(`${apiUrl}?token=${SYNC_TOKEN}&key=${encodeURIComponent(key)}`);
+      const data = await resp.json();
+      return data.value;
+    } catch (e) {
+      console.error(`Cloud GET ${key} failed:`, e);
+      setSyncStatus("error");
+      return null;
+    }
+  }
+
+  async function cloudSave(dataObj) {
+    if (!apiUrl) return false;
+    setSyncing(true);
+    try {
+      const resp = await fetch(apiUrl, {
+        method: "POST",
+        body: JSON.stringify({ token: SYNC_TOKEN, data: dataObj }),
+      });
+      const result = await resp.json();
+      if (result.success) {
+        setLastSync(new Date());
+        setSyncStatus("connected");
+      }
+      setSyncing(false);
+      return result.success;
+    } catch (e) {
+      console.error("Cloud SAVE failed:", e);
+      setSyncStatus("error");
+      setSyncing(false);
+      return false;
+    }
+  }
+
+  return { apiUrl, syncStatus, lastSync, syncing, saveApiUrl, testConnection, cloudGet, cloudSave, setSyncStatus };
+}
+
+// ══════════════════════════════════════════
+// MAIN APP
+// ══════════════════════════════════════════
+function App() {
+  const [view, setView] = useState("dashboard"); // dashboard | song | export | settings
+  const [selectedSong, setSelectedSong] = useState(null);
+  const [songProgress, setSongProgress] = useState({});
+  const [practiceLogs, setPracticeLogs] = useState([]);
+  const [customLinks, setCustomLinks] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [showLogForm, setShowLogForm] = useState(false);
+  const [exportText, setExportText] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [showAllSongs, setShowAllSongs] = useState(false);
+  const [logForm, setLogForm] = useState({ tempo: "", sections: [], notes: "", minutes: "" });
+  const [editingTutorial, setEditingTutorial] = useState(null);
+  const [editingPlayAlong, setEditingPlayAlong] = useState(null);
+  const [editingUgTab, setEditingUgTab] = useState(null);
+  const [tutorialUrl, setTutorialUrl] = useState("");
+  const [playAlongUrl, setPlayAlongUrl] = useState("");
+  const [ugTabUrl, setUgTabUrl] = useState("");
+  const [setupUrl, setSetupUrl] = useState("");
+  const [setupTesting, setSetupTesting] = useState(false);
+  const [setupError, setSetupError] = useState(false);
+
+  const cloud = useCloudSync();
+  const dataLoaded = useRef(false);
+
+  useEffect(() => {
+    if (cloud.syncStatus === "connected" && !dataLoaded.current) {
+      dataLoaded.current = true;
+      loadFromCloud();
+    } else if (cloud.syncStatus === "setup") {
+      setLoading(false);
+    }
+  }, [cloud.syncStatus]);
+
+  async function loadFromCloud() {
+    try {
+      const [progress, logs, links] = await Promise.all([
+        cloud.cloudGet("apm-song-progress"),
+        cloud.cloudGet("apm-practice-logs"),
+        cloud.cloudGet("apm-custom-links"),
+      ]);
+      if (progress) setSongProgress(progress);
+      if (logs) setPracticeLogs(logs);
+      if (links) setCustomLinks(links);
+    } catch (e) { console.error("Load failed:", e); }
+    setLoading(false);
+  }
+
+  async function saveToCloud(key, data, setter) {
+    setter(data);
+    // Also cache locally for instant reads
+    localStorage.setItem(key, JSON.stringify(data));
+    await cloud.cloudSave({ [key]: data });
+  }
+
+  const updateStatus = (id, s) => saveToCloud("apm-song-progress", { ...songProgress, [id]: s }, setSongProgress);
+  const getStatus = (id) => songProgress[id] || "not_started";
+  const getStatusInfo = (s) => STATUS_OPTIONS.find(o => o.value === s) || STATUS_OPTIONS[0];
+  const songLogs = (id) => practiceLogs.filter(l => l.songId === id);
+  const lastPracticed = (id) => { const l = songLogs(id); return l.length > 0 ? l[0].date : null; };
+
+  function addLog(songId) {
+    const entry = { id: Date.now().toString(), songId, date: new Date().toISOString(), tempo: logForm.tempo ? parseInt(logForm.tempo) : null, sections: logForm.sections, notes: logForm.notes, minutes: logForm.minutes ? parseInt(logForm.minutes) : null };
+    saveToCloud("apm-practice-logs", [entry, ...practiceLogs], setPracticeLogs);
+    setLogForm({ tempo: "", sections: [], notes: "", minutes: "" });
+    setShowLogForm(false);
+  }
+  function deleteLog(logId) { saveToCloud("apm-practice-logs", practiceLogs.filter(l => l.id !== logId), setPracticeLogs); }
+  function toggleSection(sec) {
+    setLogForm(p => ({ ...p, sections: p.sections.includes(sec) ? p.sections.filter(s => s !== sec) : [...p.sections, sec] }));
+  }
+
+  const getTutorial = (s) => customLinks[s.id]?.tutorial || s.tutorial;
+  const getPlayAlong = (s) => customLinks[s.id]?.playAlong || s.playAlong;
+  const getUgTab = (s) => customLinks[s.id]?.ugTab || null;
+
+  function saveTutorial(songId) {
+    if (!tutorialUrl.trim()) return;
+    saveToCloud("apm-custom-links", { ...customLinks, [songId]: { ...(customLinks[songId] || {}), tutorial: tutorialUrl.trim() } }, setCustomLinks);
+    setEditingTutorial(null); setTutorialUrl("");
+  }
+  function savePlayAlong(songId) {
+    if (!playAlongUrl.trim()) return;
+    saveToCloud("apm-custom-links", { ...customLinks, [songId]: { ...(customLinks[songId] || {}), playAlong: playAlongUrl.trim() } }, setCustomLinks);
+    setEditingPlayAlong(null); setPlayAlongUrl("");
+  }
+  function saveUgTab(songId) {
+    if (!ugTabUrl.trim()) return;
+    saveToCloud("apm-custom-links", { ...customLinks, [songId]: { ...(customLinks[songId] || {}), ugTab: ugTabUrl.trim() } }, setCustomLinks);
+    setEditingUgTab(null); setUgTabUrl("");
+  }
+
+  function generateExport(days) {
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
+    const recent = practiceLogs.filter(l => new Date(l.date) >= cutoff);
+    const my = SONGS.filter(s => s.playing);
+    const d = getDaysUntilShow();
+    let t = `APM Guitar Practice Update (last ${days} days)\nShow: April 24 · ${d} days away\n\n`;
+    const lines = [];
+    for (const song of my) {
+      const st = getStatusInfo(getStatus(song.id));
+      const logs = recent.filter(l => l.songId === song.id);
+      if (logs.length === 0 && st.value === "not_started") continue;
+      let line = `${song.name} — ${st.label}`;
+      if (logs.length > 0) {
+        line += ` · ${logs.length}x`;
+        const tempos = logs.filter(l => l.tempo).map(l => l.tempo);
+        if (tempos.length) line += ` · max ${Math.max(...tempos)} BPM (target: ${song.bpm})`;
+        const secs = [...new Set(logs.flatMap(l => l.sections))];
+        if (secs.length) line += ` · worked on: ${secs.join(", ")}`;
+        const notes = logs.filter(l => l.notes);
+        if (notes.length) line += ` · latest: "${notes[0].notes}"`;
+      }
+      lines.push(line);
+    }
+    const pr = my.filter(s => getStatus(s.id) === "performance_ready");
+    const ns = my.filter(s => getStatus(s.id) === "not_started");
+    t += lines.length > 0 ? lines.join("\n") + "\n" : "No practice logged.\n";
+    t += `\nOverall: ${pr.length}/10 performance ready`;
+    if (ns.length) t += ` · ${ns.length} not started`;
+    t += `\nSessions this period: ${recent.length}`;
+    return t;
+  }
+
+  function openSong(id) { setSelectedSong(id); setView("song"); setShowLogForm(false); }
+  function goBack() { setView("dashboard"); setSelectedSong(null); setShowLogForm(false); }
+
+  // ═══════════════════════════════════════════
+  // SETUP VIEW
+  // ═══════════════════════════════════════════
+  if (view === "settings" || cloud.syncStatus === "setup") {
+    return (
+      <div>
+        {cloud.apiUrl && <button className="back-btn" onClick={() => setView("dashboard")}>← Back</button>}
+        <div style={{ textAlign: "center", marginTop: 40, marginBottom: 24 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>🎸</div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a" }}>APM Show Prep</h1>
+          <p style={{ fontSize: 14, color: "#64748b", marginTop: 8 }}>Connect your Google Apps Script for cloud sync.</p>
+        </div>
+        <div className="section">
+          <label className="label">Apps Script Web App URL</label>
+          <input className="input" style={{ marginBottom: 12 }}
+            placeholder="https://script.google.com/macros/s/.../exec"
+            value={setupUrl} onChange={e => { setSetupUrl(e.target.value); setSetupError(false); }} />
+          <button className="btn btn-p btn-full"
+            disabled={setupTesting || !setupUrl.trim()}
+            style={{ opacity: (setupTesting || !setupUrl.trim()) ? 0.5 : 1 }}
+            onClick={async () => {
+              setSetupTesting(true); setSetupError(false);
+              const ok = await cloud.testConnection(setupUrl.trim().replace(/\/+$/, ""));
+              if (ok) {
+                cloud.saveApiUrl(setupUrl);
+                dataLoaded.current = false;
+                setLoading(true);
+                setView("dashboard");
+              } else { setSetupError(true); }
+              setSetupTesting(false);
+            }}>
+            {setupTesting ? "Testing connection..." : "Connect"}
+          </button>
+          {setupError && (
+            <div style={{ marginTop: 12, padding: 12, background: "#fef2f2", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>
+              Couldn't connect. Make sure the script is deployed as a web app with access "Anyone."
+            </div>
+          )}
+        </div>
+        <div className="section" style={{ background: "#f8fafc" }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Setup steps:</div>
+          <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.8 }}>
+            1. Go to script.google.com → New project<br/>
+            2. Paste the Apps Script code<br/>
+            3. Deploy → New deployment → Web app<br/>
+            4. Execute as: Me, Access: Anyone<br/>
+            5. Copy the URL and paste above
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "80vh", color: "#475569", gap: 8 }}>
+        <div style={{ fontSize: 32 }}>🎸</div>
+        <div>Syncing...</div>
+      </div>
+    );
+  }
+
+  const mySongs = SONGS.filter(s => s.playing).sort((a, b) => a.order - b.order);
+  const otherSongs = SONGS.filter(s => !s.playing).sort((a, b) => a.order - b.order);
+  const daysUntil = getDaysUntilShow();
+  const perfReady = mySongs.filter(s => getStatus(s.id) === "performance_ready").length;
+
+  // ═══════════════════════════════════════════
+  // SONG DETAIL
+  // ═══════════════════════════════════════════
+  if (view === "song" && selectedSong) {
+    const song = SONGS.find(s => s.id === selectedSong);
+    if (!song) { goBack(); return null; }
+    const status = getStatus(song.id);
+    const info = getStatusInfo(status);
+    const logs = songLogs(song.id);
+    const tut = getTutorial(song);
+    const pa = getPlayAlong(song);
+    const ug = getUgTab(song);
+
+    return (
+      <div>
+        <button className="back-btn" onClick={goBack}>← Back</button>
+        <h1 style={{ fontSize: 24, fontWeight: 700, margin: "8px 0 0", color: "#0f172a" }}>{song.name}</h1>
+        <div style={{ color: "#64748b", fontSize: 14, marginBottom: 16 }}>{song.artist} · #{song.order} in setlist</div>
+
+        {/* Song Info */}
+        <div className="section">
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, textAlign: "center" }}>
+            {[["Key", song.key], ["BPM", song.bpm], ["Capo", song.capo || "—"]].map(([l, v]) => (
+              <div key={l}><div className="label">{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{v}</div></div>
+            ))}
+          </div>
+          {song.shapes.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div className="label">Chord Shapes</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                {song.shapes.map(sh => {
+                  const barre = ["Bm","F#","F#m","F#m7add11","Bb5","F","F5"].includes(sh);
+                  return <span key={sh} className="badge" style={{ background: barre ? "#fef2f2" : "#f0fdf4", color: barre ? "#dc2626" : "#16a34a", border: `1px solid ${barre ? "#fecaca" : "#bbf7d0"}` }}>{sh}</span>;
+                })}
+              </div>
+            </div>
+          )}
+          {song.notes && <div style={{ marginTop: 12, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{song.notes}</div>}
+          {song.difficulty && <div style={{ marginTop: 8 }}><span className="badge" style={{ background: song.difficulty <= 1 ? "#f0fdf4" : song.difficulty <= 2 ? "#eff6ff" : "#fffbeb", color: song.difficulty <= 1 ? "#16a34a" : song.difficulty <= 2 ? "#2563eb" : "#d97706", border: `1px solid ${song.difficulty <= 1 ? "#bbf7d0" : song.difficulty <= 2 ? "#bfdbfe" : "#fde68a"}` }}>Difficulty {song.difficulty}/3</span></div>}
+        </div>
+
+        {/* Resources */}
+        <div className="section">
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: "#0f172a" }}>Resources</div>
+          {/* Tutorial */}
+          {tut && editingTutorial !== song.id ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <a href={tut} target="_blank" rel="noreferrer" className="link-btn">🎓 Tutorial ↗</a>
+              <button onClick={() => { setEditingTutorial(song.id); setTutorialUrl(tut); }} className="edit-btn">edit</button>
+            </div>
+          ) : editingTutorial === song.id ? (
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              <input className="input" style={{ flex: 1 }} placeholder="Tutorial URL" value={tutorialUrl} onChange={e => setTutorialUrl(e.target.value)} />
+              <button onClick={() => saveTutorial(song.id)} className="btn btn-p btn-sm">Save</button>
+              <button onClick={() => { setEditingTutorial(null); setTutorialUrl(""); }} className="btn btn-s btn-sm">✕</button>
+            </div>
+          ) : (
+            <button onClick={() => setEditingTutorial(song.id)} className="btn btn-s btn-sm" style={{ marginBottom: 8 }}>+ Add Tutorial</button>
+          )}
+          {/* Play Along */}
+          {pa && editingPlayAlong !== song.id ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <a href={pa} target="_blank" rel="noreferrer" className="link-btn">🎵 Play Along ↗</a>
+              <button onClick={() => { setEditingPlayAlong(song.id); setPlayAlongUrl(pa); }} className="edit-btn">edit</button>
+            </div>
+          ) : editingPlayAlong === song.id ? (
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+              <input className="input" style={{ flex: 1 }} placeholder="Play-along URL" value={playAlongUrl} onChange={e => setPlayAlongUrl(e.target.value)} />
+              <button onClick={() => savePlayAlong(song.id)} className="btn btn-p btn-sm">Save</button>
+              <button onClick={() => { setEditingPlayAlong(null); setPlayAlongUrl(""); }} className="btn btn-s btn-sm">✕</button>
+            </div>
+          ) : (
+            <button onClick={() => setEditingPlayAlong(song.id)} className="btn btn-s btn-sm" style={{ marginBottom: 8 }}>+ Add Play Along</button>
+          )}
+          {/* UG Tab */}
+          {ug && editingUgTab !== song.id ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <a href={ug} target="_blank" rel="noreferrer" className="link-btn">📄 UG Tab ↗</a>
+              <button onClick={() => { setEditingUgTab(song.id); setUgTabUrl(ug); }} className="edit-btn">edit</button>
+            </div>
+          ) : editingUgTab === song.id ? (
+            <div style={{ display: "flex", gap: 6 }}>
+              <input className="input" style={{ flex: 1 }} placeholder="Ultimate Guitar tab URL" value={ugTabUrl} onChange={e => setUgTabUrl(e.target.value)} />
+              <button onClick={() => saveUgTab(song.id)} className="btn btn-p btn-sm">Save</button>
+              <button onClick={() => { setEditingUgTab(null); setUgTabUrl(""); }} className="btn btn-s btn-sm">✕</button>
+            </div>
+          ) : (
+            <button onClick={() => setEditingUgTab(song.id)} className="btn btn-s btn-sm">+ Add UG Tab</button>
+          )}
+        </div>
+
+        {/* Progress */}
+        <div className="section">
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: "#0f172a" }}>Progress</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {STATUS_OPTIONS.map(opt => (
+              <button key={opt.value} onClick={() => updateStatus(song.id, opt.value)}
+                className="chip" style={status === opt.value ? { background: opt.bg, borderColor: opt.color, color: opt.color, fontWeight: 700 } : {}}>
+                {opt.emoji} {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Log Practice */}
+        {!showLogForm ? (
+          <button onClick={() => setShowLogForm(true)} className="btn btn-p btn-full" style={{ marginBottom: 12 }}>
+            + Log Practice Session
+          </button>
+        ) : (
+          <div className="section" style={{ border: "2px solid #2563eb" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#0f172a" }}>Log Practice</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div><label className="label">Tempo (BPM)</label><input className="input" type="number" placeholder={`Target: ${song.bpm}`} value={logForm.tempo} onChange={e => setLogForm({...logForm, tempo: e.target.value})} /></div>
+              <div><label className="label">Minutes</label><input className="input" type="number" placeholder="Minutes" value={logForm.minutes} onChange={e => setLogForm({...logForm, minutes: e.target.value})} /></div>
+            </div>
+            <div style={{ marginBottom: 10 }}>
+              <label className="label" style={{ marginBottom: 6 }}>Sections worked</label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {SECTION_OPTIONS.map(sec => (
+                  <button key={sec} onClick={() => toggleSection(sec)} className={`chip ${logForm.sections.includes(sec) ? "chip-on" : ""}`}>{sec}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}><label className="label">Notes</label><input className="input" placeholder="How'd it go?" value={logForm.notes} onChange={e => setLogForm({...logForm, notes: e.target.value})} /></div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => addLog(song.id)} className="btn btn-p" style={{ flex: 1 }}>Save</button>
+              <button onClick={() => setShowLogForm(false)} className="btn btn-s">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {/* History */}
+        {logs.length > 0 && <>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8, marginTop: 8, color: "#0f172a" }}>Practice History</div>
+          {logs.map(log => (
+            <div key={log.id} style={{ background: "#f8fafc", borderRadius: 10, padding: 12, marginBottom: 8, border: "1px solid #e2e8f0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{formatDateFull(log.date)}</span>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  {log.tempo && <span className="badge" style={{ background: log.tempo >= song.bpm ? "#f0fdf4" : "#f8fafc", color: log.tempo >= song.bpm ? "#16a34a" : "#64748b", border: `1px solid ${log.tempo >= song.bpm ? "#bbf7d0" : "#e2e8f0"}` }}>{log.tempo} BPM</span>}
+                  {log.minutes && <span className="badge" style={{ background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0" }}>{log.minutes}m</span>}
+                  <button onClick={() => deleteLog(log.id)} className="delete-btn">✕</button>
+                </div>
+              </div>
+              {log.sections.length > 0 && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>{log.sections.join(" · ")}</div>}
+              {log.notes && <div style={{ fontSize: 13, color: "#475569", marginTop: 4 }}>{log.notes}</div>}
+            </div>
+          ))}
+        </>}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // EXPORT VIEW
+  // ═══════════════════════════════════════════
+  if (view === "export") {
+    return (
+      <div>
+        <button className="back-btn" onClick={goBack}>← Back</button>
+        <h2 style={{ fontSize: 20, fontWeight: 700, margin: "8px 0 4px", color: "#0f172a" }}>Export for Guitar Tutor</h2>
+        <p style={{ fontSize: 13, color: "#64748b", marginBottom: 16 }}>Copy and paste into your GUITAR TUTOR chat.</p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          {[7, 14, 30].map(d => (
+            <button key={d} onClick={() => { setExportText(generateExport(d)); setCopied(false); }} className="btn btn-s btn-sm">{d} days</button>
+          ))}
+        </div>
+        {exportText && <>
+          <div style={{ background: "#f1f5f9", borderRadius: 10, padding: 14, fontFamily: "monospace", fontSize: 12, whiteSpace: "pre-wrap", color: "#334155", maxHeight: 300, overflow: "auto", lineHeight: 1.6, border: "1px solid #e2e8f0" }}>
+            {exportText}
+          </div>
+          <button onClick={() => { navigator.clipboard.writeText(exportText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }}
+            className="btn btn-p btn-full" style={{ marginTop: 12 }}>
+            {copied ? "✓ Copied!" : "Copy to Clipboard"}
+          </button>
+        </>}
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════
+  // DASHBOARD
+  // ═══════════════════════════════════════════
+  return (
+    <div>
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <button onClick={() => { setView("settings"); setSetupUrl(cloud.apiUrl || ""); }}
+            className="edit-btn" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span className={`sync-dot ${cloud.syncStatus === "connected" ? "sync-ok" : cloud.syncStatus === "error" ? "sync-err" : "sync-pending"}`}></span>
+            ⚙ Sync
+          </button>
+        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "#0f172a" }}>APM Show Prep 🎸</h1>
+        <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>April 24, 2026 · Sidley Partners Meeting</div>
+        <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, background: daysUntil <= 14 ? "#fef2f2" : daysUntil <= 30 ? "#fffbeb" : "#eff6ff", border: `1px solid ${daysUntil <= 14 ? "#fecaca" : daysUntil <= 30 ? "#fde68a" : "#bfdbfe"}`, borderRadius: 12, padding: "10px 20px", marginTop: 12 }}>
+          <span style={{ fontSize: 32, fontWeight: 800, color: daysUntil <= 14 ? "#dc2626" : daysUntil <= 30 ? "#d97706" : "#2563eb" }}>{daysUntil}</span>
+          <span style={{ fontSize: 14, color: "#64748b" }}>days to go</span>
+        </div>
+        <div style={{ background: "#e2e8f0", borderRadius: 8, height: 8, marginTop: 12, overflow: "hidden" }}>
+          <div style={{ height: "100%", borderRadius: 8, background: "linear-gradient(90deg, #3b82f6, #22c55e)", width: `${(perfReady / 10) * 100}%`, transition: "width 0.3s" }} />
+        </div>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{perfReady}/10 songs performance ready</div>
+        {cloud.lastSync && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Synced {cloud.lastSync.toLocaleTimeString()}</div>}
+      </div>
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Your 10 Songs</div>
+
+      {mySongs.map(song => {
+        const status = getStatus(song.id);
+        const info = getStatusInfo(status);
+        const lp = lastPracticed(song.id);
+        const lc = songLogs(song.id).length;
+        const ds = lp ? Math.floor((new Date() - new Date(lp)) / 86400000) : null;
+        return (
+          <div key={song.id} onClick={() => openSong(song.id)}
+            className={`card ${status === "performance_ready" ? "card-ready" : ""}`}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>#{song.order}</span>
+                  <span style={{ fontSize: 16, fontWeight: 600, color: "#0f172a" }}>{song.name}</span>
+                </div>
+                <div style={{ fontSize: 13, color: "#64748b" }}>{song.artist}</div>
+              </div>
+              <span style={{ fontSize: 18 }}>{info.emoji}</span>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>{song.bpm} BPM</span>
+              {song.capo && <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>Capo {song.capo}</span>}
+              <span className="badge" style={{ background: info.bg, color: info.color, border: `1px solid ${info.color}33` }}>{info.label}</span>
+              {lc > 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>{lc} session{lc > 1 ? "s" : ""}</span>}
+              {ds !== null && ds > 3 && <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{ds}d ago</span>}
+            </div>
+          </div>
+        );
+      })}
+
+      <button onClick={() => setShowAllSongs(!showAllSongs)}
+        className="btn btn-s" style={{ width: "100%", marginTop: 16, fontSize: 13 }}>
+        {showAllSongs ? "Hide" : "Show"} Other Setlist Songs ({otherSongs.length})
+      </button>
+      {showAllSongs && <div style={{ marginTop: 8 }}>
+        {otherSongs.map(song => (
+          <div key={song.id} className="card" style={{ opacity: 0.5, cursor: "default" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 12, color: "#94a3b8" }}>#{song.order}</span>
+              <span style={{ fontSize: 14, color: "#64748b" }}>{song.name}</span>
+              {song.artist && <span style={{ fontSize: 12, color: "#94a3b8" }}>— {song.artist}</span>}
+            </div>
+            {song.notes && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>{song.notes}</div>}
+          </div>
+        ))}
+      </div>}
+
+      <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)" }}>
+        <button onClick={() => { setExportText(generateExport(7)); setView("export"); setCopied(false); }}
+          className="btn btn-s" style={{ borderRadius: 24, boxShadow: "0 2px 12px rgba(0,0,0,.1)", border: "1px solid #cbd5e1", display: "flex", alignItems: "center", gap: 6 }}>
+          📋 Export for Tutor
+        </button>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
