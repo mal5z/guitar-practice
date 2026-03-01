@@ -357,64 +357,72 @@ function App() {
         {/* Resources */}
         <div className="section">
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 10, color: "#0f172a" }}>Resources</div>
-          {/* Tutorial */}
-          {tut && editingTutorial !== song.id ? (
+          {/* ── Filled resources first ── */}
+          {tut && editingTutorial !== song.id && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
               <a href={tut} target="_blank" rel="noreferrer" className="link-btn">🎓 Tutorial ↗</a>
               <button onClick={() => { setEditingTutorial(song.id); setTutorialUrl(tut); }} className="edit-btn">edit</button>
             </div>
-          ) : editingTutorial === song.id ? (
+          )}
+          {pa && editingPlayAlong !== song.id && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <a href={pa} target="_blank" rel="noreferrer" className="link-btn">🎵 Play Along ↗</a>
+              <button onClick={() => { setEditingPlayAlong(song.id); setPlayAlongUrl(pa); }} className="edit-btn">edit</button>
+            </div>
+          )}
+          {ug && editingUgTab !== song.id && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <a href={ug} target="_blank" rel="noreferrer" className="link-btn">📄 UG Tab ↗</a>
+              <button onClick={() => { setEditingUgTab(song.id); setUgTabUrl(ug); }} className="edit-btn">edit</button>
+            </div>
+          )}
+          {tabPdfs[song.id] && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <button onClick={() => openPdf(song.id)} className="link-btn">📄 Tab PDF ↗</button>
+              <button onClick={() => removePdf(song.id)} className="edit-btn">remove</button>
+            </div>
+          )}
+          {/* ── Edit forms (shown inline when editing) ── */}
+          {editingTutorial === song.id && (
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               <input className="input" style={{ flex: 1 }} placeholder="Tutorial URL" value={tutorialUrl} onChange={e => setTutorialUrl(e.target.value)} />
               <button onClick={() => saveTutorial(song.id)} className="btn btn-p btn-sm">Save</button>
               <button onClick={() => { setEditingTutorial(null); setTutorialUrl(""); }} className="btn btn-s btn-sm">✕</button>
             </div>
-          ) : (
-            <button onClick={() => setEditingTutorial(song.id)} className="btn btn-s btn-sm" style={{ marginBottom: 8 }}>+ Add Tutorial</button>
           )}
-          {/* Play Along */}
-          {pa && editingPlayAlong !== song.id ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-              <a href={pa} target="_blank" rel="noreferrer" className="link-btn">🎵 Play Along ↗</a>
-              <button onClick={() => { setEditingPlayAlong(song.id); setPlayAlongUrl(pa); }} className="edit-btn">edit</button>
-            </div>
-          ) : editingPlayAlong === song.id ? (
+          {editingPlayAlong === song.id && (
             <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               <input className="input" style={{ flex: 1 }} placeholder="Play-along URL" value={playAlongUrl} onChange={e => setPlayAlongUrl(e.target.value)} />
               <button onClick={() => savePlayAlong(song.id)} className="btn btn-p btn-sm">Save</button>
               <button onClick={() => { setEditingPlayAlong(null); setPlayAlongUrl(""); }} className="btn btn-s btn-sm">✕</button>
             </div>
-          ) : (
-            <button onClick={() => setEditingPlayAlong(song.id)} className="btn btn-s btn-sm" style={{ marginBottom: 8 }}>+ Add Play Along</button>
           )}
-          {/* UG Tab */}
-          {ug && editingUgTab !== song.id ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <a href={ug} target="_blank" rel="noreferrer" className="link-btn">📄 UG Tab ↗</a>
-              <button onClick={() => { setEditingUgTab(song.id); setUgTabUrl(ug); }} className="edit-btn">edit</button>
-            </div>
-          ) : editingUgTab === song.id ? (
-            <div style={{ display: "flex", gap: 6 }}>
+          {editingUgTab === song.id && (
+            <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
               <input className="input" style={{ flex: 1 }} placeholder="Ultimate Guitar tab URL" value={ugTabUrl} onChange={e => setUgTabUrl(e.target.value)} />
               <button onClick={() => saveUgTab(song.id)} className="btn btn-p btn-sm">Save</button>
               <button onClick={() => { setEditingUgTab(null); setUgTabUrl(""); }} className="btn btn-s btn-sm">✕</button>
             </div>
-          ) : (
-            <button onClick={() => setEditingUgTab(song.id)} className="btn btn-s btn-sm">+ Add UG Tab</button>
           )}
-          {/* Tab PDF */}
-          {tabPdfs[song.id] ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-              <button onClick={() => openPdf(song.id)} className="link-btn">📄 {tabPdfs[song.id].name} ↗</button>
-              <button onClick={() => removePdf(song.id)} className="edit-btn">remove</button>
-            </div>
-          ) : (
-            <label className="btn btn-s btn-sm" style={{ display: "inline-block", cursor: "pointer", marginTop: 8 }}>
-              + Upload Tab PDF
-              <input type="file" accept="application/pdf" style={{ display: "none" }}
-                onChange={e => { if (e.target.files[0]) handlePdfUpload(song.id, e.target.files[0]); }} />
-            </label>
-          )}
+          {/* ── Add buttons for unfilled resources ── */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: (tut || pa || ug || tabPdfs[song.id]) ? 4 : 0 }}>
+            {!tut && editingTutorial !== song.id && (
+              <button onClick={() => setEditingTutorial(song.id)} className="btn btn-s btn-sm">+ Tutorial</button>
+            )}
+            {!pa && editingPlayAlong !== song.id && (
+              <button onClick={() => setEditingPlayAlong(song.id)} className="btn btn-s btn-sm">+ Play Along</button>
+            )}
+            {!ug && editingUgTab !== song.id && (
+              <button onClick={() => setEditingUgTab(song.id)} className="btn btn-s btn-sm">+ UG Tab</button>
+            )}
+            {!tabPdfs[song.id] && (
+              <label className="btn btn-s btn-sm" style={{ display: "inline-block", cursor: "pointer" }}>
+                + Tab PDF
+                <input type="file" accept="application/pdf" style={{ display: "none" }}
+                  onChange={e => { if (e.target.files[0]) handlePdfUpload(song.id, e.target.files[0]); }} />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* Progress */}
@@ -554,6 +562,15 @@ function App() {
               {lc > 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>{lc} session{lc > 1 ? "s" : ""}</span>}
               {ds !== null && ds > 3 && <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{ds}d ago</span>}
             </div>
+            {(() => {
+              const res = [
+                getTutorial(song) && "Tutorial",
+                getPlayAlong(song) && "Play Along",
+                getUgTab(song) && "UG Tab",
+                tabPdfs[song.id] && "PDF",
+              ].filter(Boolean);
+              return res.length > 0 ? <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>✓ {res.join(" · ")}</div> : null;
+            })()}
           </div>
         );
       })}
