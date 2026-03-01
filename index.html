@@ -54,7 +54,7 @@
 const { useState, useEffect, useRef } = React;
 
 const SHOW_DATE = new Date("2026-04-24T19:00:00");
-const SYNC_TOKEN = "guitar2026apm";
+const API_URL = "https://script.google.com/macros/s/AKfycbxokSZwfVnccYduGBWPCVVzrHNps7WS4R7ViYgjqiGJMVIJl0NmEYVEf2BdMAPDdEMuFg/exec";
 
 const SONGS = [
   { id: 1, order: 1, name: "Hard To Handle", artist: "Black Crowes", key: "B", bpm: 105, capo: null, shapes: ["B", "A", "E"], difficulty: 3, notes: "Syncopated funk rhythm.", playing: false, tutorial: null, playAlong: null },
@@ -99,38 +99,14 @@ function formatDateFull(ds) {
 // CLOUD SYNC
 // ══════════════════════════════════════════
 function useCloudSync() {
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("apm-api-url") || "");
-  const [syncStatus, setSyncStatus] = useState("loading");
+  const [syncStatus, setSyncStatus] = useState("connected");
   const [lastSync, setLastSync] = useState(null);
   const [syncing, setSyncing] = useState(false);
-
-  useEffect(() => {
-    if (apiUrl) {
-      setSyncStatus("connected");
-    } else {
-      setSyncStatus("setup");
-    }
-  }, []);
-
-  function saveApiUrl(url) {
-    const trimmed = url.trim().replace(/\/+$/, "");
-    localStorage.setItem("apm-api-url", trimmed);
-    setApiUrl(trimmed);
-    setSyncStatus("connected");
-  }
-
-  async function testConnection(url) {
-    try {
-      const resp = await fetch(`${url}?token=${SYNC_TOKEN}&key=apm-ping`);
-      const data = await resp.json();
-      return !data.error;
-    } catch { return false; }
-  }
+  const token = "guitar2026apm";
 
   async function cloudGet(key) {
-    if (!apiUrl) return null;
     try {
-      const resp = await fetch(`${apiUrl}?token=${SYNC_TOKEN}&key=${encodeURIComponent(key)}`);
+      const resp = await fetch(`${API_URL}?token=${token}&key=${encodeURIComponent(key)}`);
       const data = await resp.json();
       return data.value;
     } catch (e) {
@@ -141,12 +117,11 @@ function useCloudSync() {
   }
 
   async function cloudSave(dataObj) {
-    if (!apiUrl) return false;
     setSyncing(true);
     try {
-      const resp = await fetch(apiUrl, {
+      const resp = await fetch(API_URL, {
         method: "POST",
-        body: JSON.stringify({ token: SYNC_TOKEN, data: dataObj }),
+        body: JSON.stringify({ token, data: dataObj }),
       });
       const result = await resp.json();
       if (result.success) {
@@ -163,18 +138,19 @@ function useCloudSync() {
     }
   }
 
-  return { apiUrl, syncStatus, lastSync, syncing, saveApiUrl, testConnection, cloudGet, cloudSave, setSyncStatus };
+  return { syncStatus, lastSync, syncing, cloudGet, cloudSave };
 }
 
 // ══════════════════════════════════════════
 // MAIN APP
 // ══════════════════════════════════════════
 function App() {
-  const [view, setView] = useState("dashboard"); // dashboard | song | export | settings
+  const [view, setView] = useState("dashboard"); // dashboard | song | export
   const [selectedSong, setSelectedSong] = useState(null);
   const [songProgress, setSongProgress] = useState({});
   const [practiceLogs, setPracticeLogs] = useState([]);
   const [customLinks, setCustomLinks] = useState({});
+  const [tabPdfs, setTabPdfs] = useState({});
   const [loading, setLoading] = useState(true);
   const [showLogForm, setShowLogForm] = useState(false);
   const [exportText, setExportText] = useState("");
@@ -187,32 +163,29 @@ function App() {
   const [tutorialUrl, setTutorialUrl] = useState("");
   const [playAlongUrl, setPlayAlongUrl] = useState("");
   const [ugTabUrl, setUgTabUrl] = useState("");
-  const [setupUrl, setSetupUrl] = useState("");
-  const [setupTesting, setSetupTesting] = useState(false);
-  const [setupError, setSetupError] = useState(false);
 
   const cloud = useCloudSync();
   const dataLoaded = useRef(false);
 
   useEffect(() => {
-    if (cloud.syncStatus === "connected" && !dataLoaded.current) {
+    if (!dataLoaded.current) {
       dataLoaded.current = true;
       loadFromCloud();
-    } else if (cloud.syncStatus === "setup") {
-      setLoading(false);
     }
-  }, [cloud.syncStatus]);
+  }, []);
 
   async function loadFromCloud() {
     try {
-      const [progress, logs, links] = await Promise.all([
+      const [progress, logs, links, pdfs] = await Promise.all([
         cloud.cloudGet("apm-song-progress"),
         cloud.cloudGet("apm-practice-logs"),
         cloud.cloudGet("apm-custom-links"),
+        cloud.cloudGet("apm-tab-pdfs"),
       ]);
       if (progress) setSongProgress(progress);
       if (logs) setPracticeLogs(logs);
       if (links) setCustomLinks(links);
+      if (pdfs) setTabPdfs(pdfs);
     } catch (e) { console.error("Load failed:", e); }
     setLoading(false);
   }
@@ -261,6 +234,33 @@ function App() {
     setEditingUgTab(null); setUgTabUrl("");
   }
 
+  function handlePdfUpload(songId, file) {
+    if (!file || file.type !== "application/pdf") return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const newPdfs = { ...tabPdfs, [songId]: { name: file.name, data: reader.result } };
+      saveToCloud("apm-tab-pdfs", newPdfs, setTabPdfs);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function openPdf(songId) {
+    const pdf = tabPdfs[songId];
+    if (!pdf) return;
+    const byteString = atob(pdf.data.split(",")[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    const blob = new Blob([ab], { type: "application/pdf" });
+    window.open(URL.createObjectURL(blob), "_blank");
+  }
+
+  function removePdf(songId) {
+    const newPdfs = { ...tabPdfs };
+    delete newPdfs[songId];
+    saveToCloud("apm-tab-pdfs", newPdfs, setTabPdfs);
+  }
+
   function generateExport(days) {
     const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
     const recent = practiceLogs.filter(l => new Date(l.date) >= cutoff);
@@ -297,58 +297,8 @@ function App() {
   function goBack() { setView("dashboard"); setSelectedSong(null); setShowLogForm(false); }
 
   // ═══════════════════════════════════════════
-  // SETUP VIEW
+  // LOADING
   // ═══════════════════════════════════════════
-  if (view === "settings" || cloud.syncStatus === "setup") {
-    return (
-      <div>
-        {cloud.apiUrl && <button className="back-btn" onClick={() => setView("dashboard")}>← Back</button>}
-        <div style={{ textAlign: "center", marginTop: 40, marginBottom: 24 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🎸</div>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: "#0f172a" }}>APM Show Prep</h1>
-          <p style={{ fontSize: 14, color: "#64748b", marginTop: 8 }}>Connect your Google Apps Script for cloud sync.</p>
-        </div>
-        <div className="section">
-          <label className="label">Apps Script Web App URL</label>
-          <input className="input" style={{ marginBottom: 12 }}
-            placeholder="https://script.google.com/macros/s/.../exec"
-            value={setupUrl} onChange={e => { setSetupUrl(e.target.value); setSetupError(false); }} />
-          <button className="btn btn-p btn-full"
-            disabled={setupTesting || !setupUrl.trim()}
-            style={{ opacity: (setupTesting || !setupUrl.trim()) ? 0.5 : 1 }}
-            onClick={async () => {
-              setSetupTesting(true); setSetupError(false);
-              const ok = await cloud.testConnection(setupUrl.trim().replace(/\/+$/, ""));
-              if (ok) {
-                cloud.saveApiUrl(setupUrl);
-                dataLoaded.current = false;
-                setLoading(true);
-                setView("dashboard");
-              } else { setSetupError(true); }
-              setSetupTesting(false);
-            }}>
-            {setupTesting ? "Testing connection..." : "Connect"}
-          </button>
-          {setupError && (
-            <div style={{ marginTop: 12, padding: 12, background: "#fef2f2", borderRadius: 8, fontSize: 13, color: "#dc2626" }}>
-              Couldn't connect. Make sure the script is deployed as a web app with access "Anyone."
-            </div>
-          )}
-        </div>
-        <div className="section" style={{ background: "#f8fafc" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Setup steps:</div>
-          <div style={{ fontSize: 13, color: "#64748b", lineHeight: 1.8 }}>
-            1. Go to script.google.com → New project<br/>
-            2. Paste the Apps Script code<br/>
-            3. Deploy → New deployment → Web app<br/>
-            4. Execute as: Me, Access: Anyone<br/>
-            5. Copy the URL and paste above
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "80vh", color: "#475569", gap: 8 }}>
@@ -452,6 +402,19 @@ function App() {
           ) : (
             <button onClick={() => setEditingUgTab(song.id)} className="btn btn-s btn-sm">+ Add UG Tab</button>
           )}
+          {/* Tab PDF */}
+          {tabPdfs[song.id] ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+              <button onClick={() => openPdf(song.id)} className="link-btn">📄 {tabPdfs[song.id].name} ↗</button>
+              <button onClick={() => removePdf(song.id)} className="edit-btn">remove</button>
+            </div>
+          ) : (
+            <label className="btn btn-s btn-sm" style={{ display: "inline-block", cursor: "pointer", marginTop: 8 }}>
+              + Upload Tab PDF
+              <input type="file" accept="application/pdf" style={{ display: "none" }}
+                onChange={e => { if (e.target.files[0]) handlePdfUpload(song.id, e.target.files[0]); }} />
+            </label>
+          )}
         </div>
 
         {/* Progress */}
@@ -550,13 +513,6 @@ function App() {
   return (
     <div>
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-          <button onClick={() => { setView("settings"); setSetupUrl(cloud.apiUrl || ""); }}
-            className="edit-btn" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span className={`sync-dot ${cloud.syncStatus === "connected" ? "sync-ok" : cloud.syncStatus === "error" ? "sync-err" : "sync-pending"}`}></span>
-            ⚙ Sync
-          </button>
-        </div>
         <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "#0f172a" }}>APM Show Prep 🎸</h1>
         <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>April 24, 2026 · Sidley Partners Meeting</div>
         <div style={{ display: "inline-flex", alignItems: "baseline", gap: 6, background: daysUntil <= 14 ? "#fef2f2" : daysUntil <= 30 ? "#fffbeb" : "#eff6ff", border: `1px solid ${daysUntil <= 14 ? "#fecaca" : daysUntil <= 30 ? "#fde68a" : "#bfdbfe"}`, borderRadius: 12, padding: "10px 20px", marginTop: 12 }}>
