@@ -151,6 +151,7 @@ function App() {
   const [practiceLogs, setPracticeLogs] = useState([]);
   const [customLinks, setCustomLinks] = useState({});
   const [tabPdfs, setTabPdfs] = useState({});
+  const [songOverrides, setSongOverrides] = useState({});
   const [loading, setLoading] = useState(true);
   const [showLogForm, setShowLogForm] = useState(false);
   const [exportText, setExportText] = useState("");
@@ -163,6 +164,12 @@ function App() {
   const [tutorialUrl, setTutorialUrl] = useState("");
   const [playAlongUrl, setPlayAlongUrl] = useState("");
   const [ugTabUrl, setUgTabUrl] = useState("");
+  const [editingCapo, setEditingCapo] = useState(null);
+  const [capoValue, setCapoValue] = useState("");
+  const [editingChords, setEditingChords] = useState(null);
+  const [chordsValue, setChordsValue] = useState("");
+  const [editingNotes, setEditingNotes] = useState(null);
+  const [notesValue, setNotesValue] = useState("");
 
   const cloud = useCloudSync();
   const dataLoaded = useRef(false);
@@ -176,16 +183,18 @@ function App() {
 
   async function loadFromCloud() {
     try {
-      const [progress, logs, links, pdfs] = await Promise.all([
+      const [progress, logs, links, pdfs, overrides] = await Promise.all([
         cloud.cloudGet("apm-song-progress"),
         cloud.cloudGet("apm-practice-logs"),
         cloud.cloudGet("apm-custom-links"),
         cloud.cloudGet("apm-tab-pdfs"),
+        cloud.cloudGet("apm-song-overrides"),
       ]);
       if (progress) setSongProgress(progress);
       if (logs) setPracticeLogs(logs);
       if (links) setCustomLinks(links);
       if (pdfs) setTabPdfs(pdfs);
+      if (overrides) setSongOverrides(overrides);
     } catch (e) { console.error("Load failed:", e); }
     setLoading(false);
   }
@@ -217,6 +226,25 @@ function App() {
   const getTutorial = (s) => customLinks[s.id]?.tutorial || s.tutorial;
   const getPlayAlong = (s) => customLinks[s.id]?.playAlong || s.playAlong;
   const getUgTab = (s) => customLinks[s.id]?.ugTab || null;
+  const getCapo = (s) => songOverrides[s.id]?.capo !== undefined ? songOverrides[s.id].capo : s.capo;
+  const getShapes = (s) => songOverrides[s.id]?.shapes !== undefined ? songOverrides[s.id].shapes : s.shapes;
+  const getNotes = (s) => songOverrides[s.id]?.notes !== undefined ? songOverrides[s.id].notes : (s.notes || "");
+
+  function saveCapo(songId) {
+    const val = capoValue.trim();
+    const capo = val === "" || val === "0" ? null : parseInt(val) || null;
+    saveToCloud("apm-song-overrides", { ...songOverrides, [songId]: { ...(songOverrides[songId] || {}), capo } }, setSongOverrides);
+    setEditingCapo(null); setCapoValue("");
+  }
+  function saveChords(songId) {
+    const shapes = chordsValue.split(",").map(s => s.trim()).filter(Boolean);
+    saveToCloud("apm-song-overrides", { ...songOverrides, [songId]: { ...(songOverrides[songId] || {}), shapes } }, setSongOverrides);
+    setEditingChords(null); setChordsValue("");
+  }
+  function saveNotes(songId) {
+    saveToCloud("apm-song-overrides", { ...songOverrides, [songId]: { ...(songOverrides[songId] || {}), notes: notesValue } }, setSongOverrides);
+    setEditingNotes(null); setNotesValue("");
+  }
 
   function saveTutorial(songId) {
     if (!tutorialUrl.trim()) return;
@@ -335,23 +363,70 @@ function App() {
         {/* Song Info */}
         <div className="section">
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, textAlign: "center" }}>
-            {[["Key", song.key], ["BPM", song.bpm], ["Capo", song.capo || "—"]].map(([l, v]) => (
-              <div key={l}><div className="label">{l}</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{v}</div></div>
-            ))}
+            <div><div className="label">Key</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{song.key}</div></div>
+            <div><div className="label">BPM</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{song.bpm}</div></div>
+            <div onClick={() => { if (editingCapo !== song.id) { setEditingCapo(song.id); setCapoValue(getCapo(song) != null ? String(getCapo(song)) : ""); } }} style={{ cursor: "pointer" }}>
+              <div className="label">Capo</div>
+              {editingCapo === song.id ? (
+                <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center" }}>
+                  <input className="input" style={{ width: 50, textAlign: "center", padding: "4px 6px", fontSize: 16 }} type="number" min="0" max="12" value={capoValue} onChange={e => setCapoValue(e.target.value)} autoFocus onKeyDown={e => { if (e.key === "Enter") saveCapo(song.id); if (e.key === "Escape") setEditingCapo(null); }} />
+                  <button onClick={(e) => { e.stopPropagation(); saveCapo(song.id); }} className="btn btn-p" style={{ padding: "4px 8px", fontSize: 12 }}>✓</button>
+                </div>
+              ) : (
+                <div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{getCapo(song) || "—"} <span style={{ fontSize: 11, color: "#94a3b8" }}>✎</span></div>
+              )}
+            </div>
           </div>
-          {song.shapes.length > 0 && (
-            <div style={{ marginTop: 14 }}>
-              <div className="label">Chord Shapes</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                {song.shapes.map(sh => {
-                  const barre = ["Bm","F#","F#m","F#m7add11","Bb5","F","F5"].includes(sh);
-                  return <span key={sh} className="badge" style={{ background: barre ? "#fef2f2" : "#f0fdf4", color: barre ? "#dc2626" : "#16a34a", border: `1px solid ${barre ? "#fecaca" : "#bbf7d0"}` }}>{sh}</span>;
-                })}
+          {(() => {
+            const shapes = getShapes(song);
+            return shapes.length > 0 || editingChords === song.id ? (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div className="label">Chord Shapes</div>
+                  {editingChords !== song.id && <button onClick={() => { setEditingChords(song.id); setChordsValue(shapes.join(", ")); }} className="edit-btn">edit</button>}
+                </div>
+                {editingChords === song.id ? (
+                  <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                    <input className="input" style={{ flex: 1 }} placeholder="Am, F, C, G (comma-separated)" value={chordsValue} onChange={e => setChordsValue(e.target.value)} autoFocus onKeyDown={e => { if (e.key === "Enter") saveChords(song.id); if (e.key === "Escape") setEditingChords(null); }} />
+                    <button onClick={() => saveChords(song.id)} className="btn btn-p btn-sm">Save</button>
+                    <button onClick={() => setEditingChords(null)} className="btn btn-s btn-sm">✕</button>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+                    {shapes.map(sh => {
+                      const barre = ["Bm","F#","F#m","F#m7add11","Bb5","F","F5"].includes(sh);
+                      return <span key={sh} className="badge" style={{ background: barre ? "#fef2f2" : "#f0fdf4", color: barre ? "#dc2626" : "#16a34a", border: `1px solid ${barre ? "#fecaca" : "#bbf7d0"}` }}>{sh}</span>;
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ marginTop: 14 }}>
+                <button onClick={() => { setEditingChords(song.id); setChordsValue(""); }} className="btn btn-s btn-sm">+ Add Chords</button>
+              </div>
+            );
+          })()}
+          {song.difficulty && <div style={{ marginTop: 8 }}><span className="badge" style={{ background: song.difficulty <= 1 ? "#f0fdf4" : song.difficulty <= 2 ? "#eff6ff" : "#fffbeb", color: song.difficulty <= 1 ? "#16a34a" : song.difficulty <= 2 ? "#2563eb" : "#d97706", border: `1px solid ${song.difficulty <= 1 ? "#bbf7d0" : song.difficulty <= 2 ? "#bfdbfe" : "#fde68a"}` }}>Difficulty {song.difficulty}/3</span></div>}
+        </div>
+
+        {/* Notes */}
+        <div className="section">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>Notes</div>
+            {editingNotes !== song.id && <button onClick={() => { setEditingNotes(song.id); setNotesValue(getNotes(song)); }} className="edit-btn">edit</button>}
+          </div>
+          {editingNotes === song.id ? (
+            <div>
+              <textarea className="input" style={{ minHeight: 80, resize: "vertical", fontFamily: "inherit" }} value={notesValue} onChange={e => setNotesValue(e.target.value)} autoFocus placeholder="Add notes about this song..." />
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <button onClick={() => saveNotes(song.id)} className="btn btn-p btn-sm">Save</button>
+                <button onClick={() => setEditingNotes(null)} className="btn btn-s btn-sm">Cancel</button>
               </div>
             </div>
+          ) : (
+            getNotes(song) ? <div style={{ fontSize: 13, color: "#475569", lineHeight: 1.5, whiteSpace: "pre-wrap" }}>{getNotes(song)}</div>
+            : <div style={{ fontSize: 13, color: "#94a3b8", fontStyle: "italic" }}>No notes yet</div>
           )}
-          {song.notes && <div style={{ marginTop: 12, fontSize: 13, color: "#475569", lineHeight: 1.5 }}>{song.notes}</div>}
-          {song.difficulty && <div style={{ marginTop: 8 }}><span className="badge" style={{ background: song.difficulty <= 1 ? "#f0fdf4" : song.difficulty <= 2 ? "#eff6ff" : "#fffbeb", color: song.difficulty <= 1 ? "#16a34a" : song.difficulty <= 2 ? "#2563eb" : "#d97706", border: `1px solid ${song.difficulty <= 1 ? "#bbf7d0" : song.difficulty <= 2 ? "#bfdbfe" : "#fde68a"}` }}>Difficulty {song.difficulty}/3</span></div>}
         </div>
 
         {/* Resources */}
@@ -557,7 +632,7 @@ function App() {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
               <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>{song.bpm} BPM</span>
-              {song.capo && <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>Capo {song.capo}</span>}
+              {getCapo(song) && <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>Capo {getCapo(song)}</span>}
               <span className="badge" style={{ background: info.bg, color: info.color, border: `1px solid ${info.color}33` }}>{info.label}</span>
               {lc > 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>{lc} session{lc > 1 ? "s" : ""}</span>}
               {ds !== null && ds > 3 && <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{ds}d ago</span>}
