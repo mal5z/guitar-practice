@@ -61,7 +61,7 @@ const SONGS = [
   { id: 2, order: 2, name: "December, 1963", artist: "Four Seasons", key: "C#", bpm: 105, capo: 1, shapes: ["C", "Am", "F", "G", "Dm", "Em"], difficulty: 2, notes: "Most chord variety.", playing: false, tutorial: null, playAlong: null },
   { id: 3, order: 3, name: "Heaven Is A Place On Earth", artist: "Belinda Carlisle", key: "C#m", bpm: 123, capo: 4, shapes: ["Am", "F", "C", "G"], difficulty: 2, notes: "F barre or partial.", playing: true, tutorial: null, playAlong: null },
   { id: 4, order: 4, name: "Style", artist: "Taylor Swift", key: "D", bpm: 95, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
-  { id: 5, order: 5, name: "Jessie's Girl", artist: "Rick Springfield", key: "D", bpm: 133, capo: 2, shapes: ["C", "G", "Am", "Fmaj7"], difficulty: 2, notes: "All open + Fmaj7 sub. Verse down, need chorus. Speed is the stretch.", playing: true, tutorial: "https://www.youtube.com/watch?v=VoKJqEHCdTM", playAlong: null },
+  { id: 5, order: 5, name: "Jessie's Girl", artist: "Rick Springfield", key: "D", bpm: 133, capo: 2, shapes: ["C", "G", "Am", "Fmaj7"], difficulty: 2, notes: "All open + Fmaj7 sub. Verse down, need chorus. Speed is the stretch.", playing: false, tutorial: "https://www.youtube.com/watch?v=VoKJqEHCdTM", playAlong: null },
   { id: 6, order: 6, name: "Only Wanna Be With You", artist: "Hootie & the Blowfish", key: "F#", bpm: 104, capo: 2, shapes: ["E", "A", "B7"], difficulty: 1, notes: "Open shapes. Relaxed feel.", playing: true, tutorial: null, playAlong: null },
   { id: 7, order: 7, name: "Ironic", artist: "Alanis Morissette", key: "B", bpm: 85, capo: 2, shapes: ["A", "E", "F#m", "D"], difficulty: 1, notes: "Slow, manageable.", playing: false, tutorial: null, playAlong: null },
   { id: 8, order: 8, name: "Hit Me With Your Best Shot", artist: "Pat Benatar", key: "E", bpm: 129, capo: 2, shapes: ["D", "G", "Bm", "A"], difficulty: 2, notes: "One Bm barre. Verse down, need chorus.", playing: true, tutorial: null, playAlong: null },
@@ -70,11 +70,11 @@ const SONGS = [
   { id: 11, order: 11, name: "Pink Pony Club", artist: "Chappell Roan", key: "F#", bpm: 107, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
   { id: 12, order: 12, name: "Man I Need", artist: "", key: "Db", bpm: 120, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
   { id: 13, order: 13, name: "Walk of Life", artist: "Dire Straits", key: "E", bpm: 172, capo: null, shapes: ["E", "A", "B"], difficulty: 2, notes: "Three chords. 172 BPM speed challenge.", playing: false, tutorial: null, playAlong: null },
-  { id: 14, order: 14, name: "I'm A Believer", artist: "Monkees", key: "F#", bpm: 164, capo: 4, shapes: ["D", "G", "C", "A"], difficulty: 1, notes: "All open with capo 4. Keep strumming tight.", playing: true, tutorial: null, playAlong: null },
+  { id: 14, order: 14, name: "I'm A Believer", artist: "Monkees", key: "F#", bpm: 164, capo: 4, shapes: ["D", "G", "C", "A"], difficulty: 1, notes: "All open with capo 4. Keep strumming tight.", playing: false, tutorial: null, playAlong: null },
   { id: 15, order: 15, name: "99 Luftballons", artist: "Nena", key: "E", bpm: 97, capo: null, shapes: ["E", "F#m", "G#m", "A", "B"], difficulty: 2, notes: "New wave rhythm is the curve.", playing: false, tutorial: null, playAlong: null },
-  { id: 16, order: 16, name: "Purple Rain", artist: "Prince", key: "F", bpm: 118, capo: 1, shapes: ["Aadd9", "F#m7add11", "Dadd9", "Eadd9"], difficulty: 2, notes: "Same four chords throughout. Easy rhythm.", playing: true, tutorial: "https://www.youtube.com/watch?v=purple-rain-easy", playAlong: null },
+  { id: 16, order: 16, name: "Purple Rain", artist: "Prince", key: "F", bpm: 118, capo: 1, shapes: ["Aadd9", "F#m7add11", "Dadd9", "Eadd9"], difficulty: 2, notes: "Same four chords throughout. Easy rhythm.", playing: false, tutorial: "https://www.youtube.com/watch?v=purple-rain-easy", playAlong: null },
   { id: 17, order: 17, name: "Hotel California", artist: "Eagles", key: "Bm", bpm: 148, capo: null, shapes: ["Bm", "F#", "A", "E", "G", "D", "Em"], difficulty: 2, notes: "Most barre-heavy. Bm + F# barres. Intro TBD.", playing: true, tutorial: null, playAlong: null },
-  { id: 18, order: 18, name: "No Surrender", artist: "Bruce Springsteen", key: "F", bpm: 156, capo: null, shapes: ["F5", "Bb5", "C5"], difficulty: 2, notes: "All power chords. Alternate picking, palm muted.", playing: true, tutorial: "https://www.youtube.com/watch?v=no-surrender-tutorial", playAlong: null },
+  { id: 18, order: 18, name: "No Surrender", artist: "Bruce Springsteen", key: "F", bpm: 156, capo: null, shapes: ["F5", "Bb5", "C5"], difficulty: 2, notes: "All power chords. Alternate picking, palm muted.", playing: false, tutorial: "https://www.youtube.com/watch?v=no-surrender-tutorial", playAlong: null },
   { id: 19, order: 19, name: "Sweet Home Chicago", artist: "Blues Brothers", key: "E", bpm: 130, capo: null, shapes: ["E7", "A7", "B7"], difficulty: 1, notes: "Already in your set. Intro TBD.", playing: true, tutorial: null, playAlong: "https://www.youtube.com/watch?v=sweet-home-chicago" },
 ];
 
@@ -89,7 +89,9 @@ const STATUS_OPTIONS = [
 const SECTION_OPTIONS = ["Intro", "Verse", "Chorus", "Bridge", "Outro", "Solo Section", "Full Run-Through"];
 
 function getDaysUntilShow() {
-  return Math.max(0, Math.ceil((SHOW_DATE - new Date()) / (1000 * 60 * 60 * 24)));
+  const today = new Date(); today.setHours(0,0,0,0);
+  const show = new Date(2026, 3, 24); // April 24 (month is 0-indexed)
+  return Math.max(0, Math.round((show - today) / (1000 * 60 * 60 * 24)));
 }
 function formatDateFull(ds) {
   return new Date(ds).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
@@ -315,7 +317,7 @@ function App() {
     const pr = my.filter(s => getStatus(s.id) === "performance_ready");
     const ns = my.filter(s => getStatus(s.id) === "not_started");
     t += lines.length > 0 ? lines.join("\n") + "\n" : "No practice logged.\n";
-    t += `\nOverall: ${pr.length}/10 performance ready`;
+    t += `\nOverall: ${pr.length}/${my.length} performance ready`;
     if (ns.length) t += ` · ${ns.length} not started`;
     t += `\nSessions this period: ${recent.length}`;
     return t;
@@ -603,13 +605,13 @@ function App() {
           <span style={{ fontSize: 14, color: "#64748b" }}>days to go</span>
         </div>
         <div style={{ background: "#e2e8f0", borderRadius: 8, height: 8, marginTop: 12, overflow: "hidden" }}>
-          <div style={{ height: "100%", borderRadius: 8, background: "linear-gradient(90deg, #3b82f6, #22c55e)", width: `${(perfReady / 10) * 100}%`, transition: "width 0.3s" }} />
+          <div style={{ height: "100%", borderRadius: 8, background: "linear-gradient(90deg, #3b82f6, #22c55e)", width: `${(perfReady / mySongs.length) * 100}%`, transition: "width 0.3s" }} />
         </div>
-        <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{perfReady}/10 songs performance ready</div>
+        <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>{perfReady}/{mySongs.length} songs performance ready</div>
         {cloud.lastSync && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Synced {cloud.lastSync.toLocaleTimeString()}</div>}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Your 10 Songs</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Your {mySongs.length} Songs</div>
 
       {mySongs.map(song => {
         const status = getStatus(song.id);
