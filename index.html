@@ -306,7 +306,7 @@ function App() {
       if (logs.length > 0) {
         line += ` · ${logs.length}x`;
         const tempos = logs.filter(l => l.tempo).map(l => l.tempo);
-        if (tempos.length) line += ` · max ${Math.max(...tempos)} BPM (target: ${song.bpm})`;
+        if (tempos.length) line += ` · max ${Math.max(...tempos)}% speed`;
         const secs = [...new Set(logs.flatMap(l => l.sections))];
         if (secs.length) line += ` · worked on: ${secs.join(", ")}`;
         const notes = logs.filter(l => l.notes);
@@ -364,7 +364,7 @@ function App() {
 
         {/* Song Info */}
         <div className="section">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, textAlign: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12, textAlign: "center" }}>
             <div><div className="label">Key</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{song.key}</div></div>
             <div><div className="label">BPM</div><div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{song.bpm}</div></div>
             <div onClick={() => { if (editingCapo !== song.id) { setEditingCapo(song.id); setCapoValue(getCapo(song) != null ? String(getCapo(song)) : ""); } }} style={{ cursor: "pointer" }}>
@@ -378,37 +378,11 @@ function App() {
                 <div style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>{getCapo(song) || "—"} <span style={{ fontSize: 11, color: "#94a3b8" }}>✎</span></div>
               )}
             </div>
+            {(() => {
+              const latest = logs.find(l => l.tempo);
+              return <div><div className="label">Latest</div><div style={{ fontSize: 20, fontWeight: 700, color: latest && latest.tempo >= 100 ? "#16a34a" : "#0f172a" }}>{latest ? `${latest.tempo}%` : "—"}</div></div>;
+            })()}
           </div>
-          {(() => {
-            const shapes = getShapes(song);
-            return shapes.length > 0 || editingChords === song.id ? (
-              <div style={{ marginTop: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div className="label">Chord Shapes</div>
-                  {editingChords !== song.id && <button onClick={() => { setEditingChords(song.id); setChordsValue(shapes.join(", ")); }} className="edit-btn">edit</button>}
-                </div>
-                {editingChords === song.id ? (
-                  <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                    <input className="input" style={{ flex: 1 }} placeholder="Am, F, C, G (comma-separated)" value={chordsValue} onChange={e => setChordsValue(e.target.value)} autoFocus onKeyDown={e => { if (e.key === "Enter") saveChords(song.id); if (e.key === "Escape") setEditingChords(null); }} />
-                    <button onClick={() => saveChords(song.id)} className="btn btn-p btn-sm">Save</button>
-                    <button onClick={() => setEditingChords(null)} className="btn btn-s btn-sm">✕</button>
-                  </div>
-                ) : (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
-                    {shapes.map(sh => {
-                      const barre = ["Bm","F#","F#m","F#m7add11","Bb5","F","F5"].includes(sh);
-                      return <span key={sh} className="badge" style={{ background: barre ? "#fef2f2" : "#f0fdf4", color: barre ? "#dc2626" : "#16a34a", border: `1px solid ${barre ? "#fecaca" : "#bbf7d0"}` }}>{sh}</span>;
-                    })}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ marginTop: 14 }}>
-                <button onClick={() => { setEditingChords(song.id); setChordsValue(""); }} className="btn btn-s btn-sm">+ Add Chords</button>
-              </div>
-            );
-          })()}
-          {song.difficulty && <div style={{ marginTop: 8 }}><span className="badge" style={{ background: song.difficulty <= 1 ? "#f0fdf4" : song.difficulty <= 2 ? "#eff6ff" : "#fffbeb", color: song.difficulty <= 1 ? "#16a34a" : song.difficulty <= 2 ? "#2563eb" : "#d97706", border: `1px solid ${song.difficulty <= 1 ? "#bbf7d0" : song.difficulty <= 2 ? "#bfdbfe" : "#fde68a"}` }}>Difficulty {song.difficulty}/3</span></div>}
         </div>
 
         {/* Notes */}
@@ -524,7 +498,7 @@ function App() {
           <div className="section" style={{ border: "2px solid #2563eb" }}>
             <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, color: "#0f172a" }}>Log Practice</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
-              <div><label className="label">Tempo (BPM)</label><input className="input" type="number" placeholder={`Target: ${song.bpm}`} value={logForm.tempo} onChange={e => setLogForm({...logForm, tempo: e.target.value})} /></div>
+              <div><label className="label">% Full Speed</label><input className="input" type="number" min="0" max="100" placeholder="e.g. 80" value={logForm.tempo} onChange={e => setLogForm({...logForm, tempo: e.target.value})} /></div>
               <div><label className="label">Minutes</label><input className="input" type="number" placeholder="Minutes" value={logForm.minutes} onChange={e => setLogForm({...logForm, minutes: e.target.value})} /></div>
             </div>
             <div style={{ marginBottom: 10 }}>
@@ -551,7 +525,7 @@ function App() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>{formatDateFull(log.date)}</span>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  {log.tempo && <span className="badge" style={{ background: log.tempo >= song.bpm ? "#f0fdf4" : "#f8fafc", color: log.tempo >= song.bpm ? "#16a34a" : "#64748b", border: `1px solid ${log.tempo >= song.bpm ? "#bbf7d0" : "#e2e8f0"}` }}>{log.tempo} BPM</span>}
+                  {log.tempo && <span className="badge" style={{ background: log.tempo >= 100 ? "#f0fdf4" : "#f8fafc", color: log.tempo >= 100 ? "#16a34a" : "#64748b", border: `1px solid ${log.tempo >= 100 ? "#bbf7d0" : "#e2e8f0"}` }}>{log.tempo}%</span>}
                   {log.minutes && <span className="badge" style={{ background: "#f8fafc", color: "#64748b", border: "1px solid #e2e8f0" }}>{log.minutes}m</span>}
                   <button onClick={() => deleteLog(log.id)} className="delete-btn">✕</button>
                 </div>
@@ -619,6 +593,7 @@ function App() {
         const lp = lastPracticed(song.id);
         const lc = songLogs(song.id).length;
         const ds = lp ? Math.floor((new Date() - new Date(lp)) / 86400000) : null;
+        const latestSpeed = songLogs(song.id).find(l => l.tempo);
         return (
           <div key={song.id} onClick={() => openSong(song.id)}
             className={`card ${status === "performance_ready" ? "card-ready" : ""}`}>
@@ -636,6 +611,7 @@ function App() {
               <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>{song.bpm} BPM</span>
               {getCapo(song) && <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>Capo {getCapo(song)}</span>}
               <span className="badge" style={{ background: info.bg, color: info.color, border: `1px solid ${info.color}33` }}>{info.label}</span>
+              {latestSpeed && <span className="badge" style={{ background: latestSpeed.tempo >= 100 ? "#f0fdf4" : "#f8fafc", color: latestSpeed.tempo >= 100 ? "#16a34a" : "#64748b", border: `1px solid ${latestSpeed.tempo >= 100 ? "#bbf7d0" : "#e2e8f0"}` }}>{latestSpeed.tempo}%</span>}
               {lc > 0 && <span style={{ fontSize: 11, color: "#94a3b8" }}>{lc} session{lc > 1 ? "s" : ""}</span>}
               {ds !== null && ds > 3 && <span style={{ fontSize: 11, color: "#d97706", fontWeight: 600 }}>{ds}d ago</span>}
             </div>
