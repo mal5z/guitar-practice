@@ -59,7 +59,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxokSZwfVnccYduGBWPCVVz
 const SONGS = [
   { id: 1, order: 1, name: "Hard To Handle", artist: "Black Crowes", key: "B", bpm: 105, capo: null, shapes: ["B", "A", "E"], difficulty: 3, notes: "Syncopated funk rhythm.", playing: false, tutorial: null, playAlong: null },
   { id: 2, order: 2, name: "December, 1963", artist: "Four Seasons", key: "C#", bpm: 105, capo: 1, shapes: ["C", "Am", "F", "G", "Dm", "Em"], difficulty: 2, notes: "Most chord variety.", playing: false, tutorial: null, playAlong: null },
-  { id: 3, order: 3, name: "Heaven Is A Place On Earth", artist: "Belinda Carlisle", key: "C#m", bpm: 123, capo: 4, shapes: ["Am", "F", "C", "G"], difficulty: 2, notes: "F barre or partial.", playing: true, tutorial: null, playAlong: null },
+  { id: 3, order: 3, name: "Heaven Is A Place On Earth", artist: "Belinda Carlisle", key: "C#m", bpm: 123, capo: null, shapes: ["Am", "F", "C", "G"], difficulty: 2, notes: "F barre or partial.", playing: true, tutorial: null, playAlong: null },
   { id: 4, order: 4, name: "Style", artist: "Taylor Swift", key: "D", bpm: 95, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
   { id: 5, order: 5, name: "Jessie's Girl", artist: "Rick Springfield", key: "D", bpm: 133, capo: 2, shapes: ["C", "G", "Am", "Fmaj7"], difficulty: 2, notes: "All open + Fmaj7 sub. Verse down, need chorus. Speed is the stretch.", playing: false, tutorial: "https://www.youtube.com/watch?v=VoKJqEHCdTM", playAlong: null },
   { id: 6, order: 6, name: "Only Wanna Be With You", artist: "Hootie & the Blowfish", key: "F#", bpm: 104, capo: 2, shapes: ["E", "A", "B7"], difficulty: 1, notes: "Open shapes. Relaxed feel.", playing: true, tutorial: null, playAlong: null },
@@ -69,11 +69,11 @@ const SONGS = [
   { id: 10, order: 10, name: "Twist And Shout", artist: "Beatles", key: "D", bpm: 131, capo: null, shapes: ["D", "G", "A"], difficulty: 1, notes: "Three open chords.", playing: true, tutorial: null, playAlong: null },
   { id: 11, order: 11, name: "Pink Pony Club", artist: "Chappell Roan", key: "F#", bpm: 107, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
   { id: 12, order: 12, name: "Man I Need", artist: "", key: "Db", bpm: 120, capo: null, shapes: [], difficulty: null, notes: "Don't know it.", playing: false, tutorial: null, playAlong: null },
-  { id: 13, order: 13, name: "Walk of Life", artist: "Dire Straits", key: "E", bpm: 172, capo: null, shapes: ["E", "A", "B"], difficulty: 2, notes: "Three chords. 172 BPM speed challenge.", playing: false, tutorial: null, playAlong: null },
-  { id: 14, order: 14, name: "I'm A Believer", artist: "Monkees", key: "F#", bpm: 164, capo: 4, shapes: ["D", "G", "C", "A"], difficulty: 1, notes: "All open with capo 4. Keep strumming tight.", playing: false, tutorial: null, playAlong: null },
+  { id: 13, order: 13, name: "Walk of Life", artist: "Dire Straits", key: "E", bpm: 172, capo: 2, shapes: ["E", "A", "B"], difficulty: 2, notes: "Three chords. 172 BPM speed challenge.", playing: true, acoustic: true, tutorial: null, playAlong: null },
+  { id: 14, order: 14, name: "I'm A Believer", artist: "Monkees", key: "F#", bpm: 164, capo: 4, shapes: ["D", "G", "C", "A"], difficulty: 1, notes: "All open with capo 4. Keep strumming tight.", playing: true, acoustic: true, tutorial: null, playAlong: null },
   { id: 15, order: 15, name: "99 Luftballons", artist: "Nena", key: "E", bpm: 97, capo: null, shapes: ["E", "F#m", "G#m", "A", "B"], difficulty: 2, notes: "New wave rhythm is the curve.", playing: false, tutorial: null, playAlong: null },
   { id: 16, order: 16, name: "Purple Rain", artist: "Prince", key: "F", bpm: 118, capo: 1, shapes: ["Aadd9", "F#m7add11", "Dadd9", "Eadd9"], difficulty: 2, notes: "Same four chords throughout. Easy rhythm.", playing: false, tutorial: "https://www.youtube.com/watch?v=purple-rain-easy", playAlong: null },
-  { id: 17, order: 17, name: "Hotel California", artist: "Eagles", key: "Bm", bpm: 148, capo: null, shapes: ["Bm", "F#", "A", "E", "G", "D", "Em"], difficulty: 2, notes: "Most barre-heavy. Bm + F# barres. Intro TBD.", playing: true, tutorial: null, playAlong: null },
+  { id: 17, order: 17, name: "Hotel California", artist: "Eagles", key: "Bm", bpm: 148, capo: null, shapes: ["Bm", "F#", "A", "E", "G", "D", "Em"], difficulty: 2, notes: "Most barre-heavy. Bm + F# barres. Intro TBD.", playing: true, acoustic: true, tutorial: null, playAlong: null },
   { id: 18, order: 18, name: "No Surrender", artist: "Bruce Springsteen", key: "F", bpm: 156, capo: null, shapes: ["F5", "Bb5", "C5"], difficulty: 2, notes: "All power chords. Alternate picking, palm muted.", playing: false, tutorial: "https://www.youtube.com/watch?v=no-surrender-tutorial", playAlong: null },
   { id: 19, order: 19, name: "Sweet Home Chicago", artist: "Blues Brothers", key: "E", bpm: 130, capo: null, shapes: ["E7", "A7", "B7"], difficulty: 1, notes: "Already in your set. Intro TBD.", playing: true, tutorial: null, playAlong: "https://www.youtube.com/watch?v=sweet-home-chicago" },
 ];
@@ -360,7 +360,7 @@ function App() {
       <div>
         <button className="back-btn" onClick={goBack}>← Back</button>
         <h1 style={{ fontSize: 24, fontWeight: 700, margin: "8px 0 0", color: "#0f172a" }}>{song.name}</h1>
-        <div style={{ color: "#64748b", fontSize: 14, marginBottom: 16 }}>{song.artist} · #{song.order} in setlist</div>
+        <div style={{ color: "#64748b", fontSize: 14, marginBottom: 16 }}>{song.artist} · #{song.order} in setlist{song.acoustic ? " · 🎸 Acoustic" : ""}</div>
 
         {/* Song Info */}
         <div className="section">
@@ -609,6 +609,7 @@ function App() {
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap", alignItems: "center" }}>
               <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>{song.bpm} BPM</span>
+              {song.acoustic && <span className="badge" style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a" }}>🎸 Acoustic</span>}
               {getCapo(song) && <span className="badge" style={{ background: "#f1f5f9", color: "#64748b", border: "1px solid #e2e8f0" }}>Capo {getCapo(song)}</span>}
               <span className="badge" style={{ background: info.bg, color: info.color, border: `1px solid ${info.color}33` }}>{info.label}</span>
               {latestSpeed && <span className="badge" style={{ background: latestSpeed.tempo >= 100 ? "#f0fdf4" : "#f8fafc", color: latestSpeed.tempo >= 100 ? "#16a34a" : "#64748b", border: `1px solid ${latestSpeed.tempo >= 100 ? "#bbf7d0" : "#e2e8f0"}` }}>{latestSpeed.tempo}%</span>}
